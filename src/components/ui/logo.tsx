@@ -1,22 +1,19 @@
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, useTheme } from '@mui/material';
 
-type MHLogoProps = {
-  variant?: 'light' | 'dark'; // 'light' = use white text; 'dark' = use blue text
-};
-
-const MHLogo = ({ variant = 'dark' }: MHLogoProps) => {
-  const isLight = variant === 'light';
+const MHLogo = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   return (
     <Typography
       variant="h5"
       fontWeight="bold"
-      sx={{ fontFamily: 'cursive', color: isLight ? '#fff' : '#000' }}
+      sx={{ fontFamily: 'cursive', color: isDark ? '#fff' : '#800000' }}
     >
       MH-
       <Box
         component="span"
-        sx={{ color: isLight ? '#fff' : '#1976d2' }}
+        sx={{ color: isDark ? '#fff' : '#1976d2' }}
       >
         ELP
       </Box>
