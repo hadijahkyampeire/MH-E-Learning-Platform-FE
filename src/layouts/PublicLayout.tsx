@@ -11,7 +11,7 @@ const PublicLayout = () => {
         elevation={0}
         sx={{ borderBottom: '1px solid #e0e0e0' }}>
         <Toolbar>
-          <MHLogo variant='dark' />
+          <MHLogo />
           <Box sx={{ flexGrow: 1 }} />
         </Toolbar>
       </AppBar>

@@ -39,6 +39,7 @@ import InstructorDashboard from '../pages/dashboards/InstructorDashboard';
 import UnAuthorized from '../pages/UnAuthorized';
 import ProtectedRoute from './ProtectedRoute';
 import AnonymousRoute from './AnonymousRoute';
+import Overview from '../pages/private/super-admin/Overview';
 
 const AppRoutes = () => (
   <Routes>
@@ -87,10 +88,11 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     >
-      <Route index element={<Navigate to="users" replace />} />
+      <Route index element={<Navigate to="overview" replace />} />
+      <Route path="organizations" element={<ManageOrganizations />} />
       <Route path="users" element={<AllUsers />} />
       <Route path="courses" element={<Courses />} />
-      <Route path="orgs" element={<ManageOrganizations />} />
+      <Route path="overview" element={<Overview />} />
     </Route>
     <Route
       path="/admin"

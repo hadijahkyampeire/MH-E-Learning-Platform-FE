@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -13,23 +13,25 @@ import { useNavigate } from 'react-router-dom';
 import LogoutIcon from '@mui/icons-material/Logout';
 import KeyIcon from '@mui/icons-material/VpnKey';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { fetchOrganizations } from '../store/slices/organizationSlice';
+import { useGetOrganizationsQuery } from '../services/organizationsApi';
 import { logout } from '../store/slices/authSlice';
 import { useTheme } from '@mui/material/styles';
 import MHLogo from '../components/ui/logo';
+import { useNotification } from '../context/NotificationProvider';
 
 type Props = {
   onChangePassword: () => void;
 };
 
 const DashboardHeader = ({ onChangePassword }: Props) => {
+  const { showNotification } = useNotification();
+  const { data: organizations = [] } = useGetOrganizationsQuery();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const theme = useTheme();
 
   const user = useAppSelector((state) => state.auth.user);
-  const { organizations } = useAppSelector((state) => state.organizations);
 
   const onLogout = () => {
     dispatch(logout());
@@ -50,13 +52,6 @@ const DashboardHeader = ({ onChangePassword }: Props) => {
   };
 
   const handleClose = () => setAnchorEl(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await dispatch(fetchOrganizations());
-    };
-    fetchData();
-  }, [dispatch]);
 
   return (
     <AppBar
@@ -98,6 +93,7 @@ const DashboardHeader = ({ onChangePassword }: Props) => {
               onClick={() => {
                 onLogout();
                 handleClose();
+                showNotification('Logout successful', 'info');
               }}
             >
               <LogoutIcon fontSize="small" sx={{ mr: 1 }} /> Logout

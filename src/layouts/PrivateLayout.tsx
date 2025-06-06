@@ -7,7 +7,7 @@ const PrivateLayout = () => {
     <>
       <AppBar position="static">
         <Toolbar>
-          <MHLogo variant='light' />
+          <MHLogo />
           <Box sx={{ flexGrow: 1 }} />
           <Button color="inherit">Logout</Button>
         </Toolbar>
