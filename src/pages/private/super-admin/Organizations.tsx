@@ -1,117 +1,135 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
-  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   IconButton,
   TextField,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   MenuItem,
   Divider,
 } from '@mui/material';
+import Table from '../../../components/ui/Table';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
-import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import {
-  fetchOrganizations,
-  createOrganization,
-} from '../../../store/slices/adminOrgsSlice';
+  useGetAdminOrganizationsQuery,
+  useCreateAdminOrganizationMutation,
+} from '../../../services/adminApi';
 import { fontOptions } from '../../../common/fonts';
 import { colorOptions } from '../../../common/colors';
+import Button from '../../../components/ui/Button';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { useNotification } from '../../../context/NotificationProvider';
+
+const formSchema = yup.object().shape({
+  name: yup.string().required('Organization Name is required'),
+  organization_code: yup.string().required('Organization Code is required'),
+  font: yup.string().nullable(),
+  primaryLightColor: yup.string().nullable(),
+  primaryDarkColor: yup.string().nullable(),
+  secondaryLightColor: yup.string().nullable(),
+  secondaryDarkColor: yup.string().nullable(),
+});
+
+type FormValues = {
+  name: string;
+  organization_code: string;
+  font?: string | null;
+  primaryLightColor?: string | null;
+  primaryDarkColor?: string | null;
+  secondaryLightColor?: string | null;
+  secondaryDarkColor?: string | null;
+};
 
 function Organizations() {
-  const dispatch = useAppDispatch();
-  const organizations = useAppSelector(
-    (state) => state.adminOrganizations.organizations
-  );
+  const { data: organizations = [], refetch } = useGetAdminOrganizationsQuery();
+  const [addAdminOrganization] = useCreateAdminOrganizationMutation();
+  const { showNotification } = useNotification();
   const [open, setOpen] = useState(false);
-
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [font, setFont] = useState('');
-  const [primaryLightColor, setPrimaryLightColor] = useState('');
-  const [primaryDarkColor, setPrimaryDarkColor] = useState('');
-  const [secondaryLightColor, setSecondaryLightColor] = useState('');
-  const [secondaryDarkColor, setSecondaryDarkColor] = useState('');
+  const {
+    handleSubmit,
+    control,
+    setError,
+    formState: { errors },
+    reset,
+  } = useForm({ resolver: yupResolver(formSchema) });
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
-    setName('');
-    setCode('');
-    setFont('');
-    setPrimaryLightColor('');
-    setPrimaryDarkColor('');
-    setSecondaryLightColor('');
-    setSecondaryDarkColor('');
+    reset();
   };
 
-  const handleSubmit = async () => {
-    await dispatch(
-      createOrganization({
-        name,
-        code,
-        settings: {
-          font,
-          primaryLightColor,
-          primaryDarkColor,
-          secondaryLightColor,
-          secondaryDarkColor,
-        },
-      })
-    );
-    handleClose();
+  const onSubmit = async (payload: FormValues) => {
+    const requestBody = {
+      name: payload.name,
+      organization_code: payload.organization_code,
+      settings: {
+        font: payload.font ?? '',
+        primaryLightColor: payload.primaryLightColor ?? '',
+        primaryDarkColor: payload.primaryDarkColor ?? '',
+        secondaryLightColor: payload.secondaryLightColor ?? '',
+        secondaryDarkColor: payload.secondaryDarkColor ?? '',
+      },
+    };
+
+    try {
+      await addAdminOrganization(requestBody).unwrap();
+      refetch();
+      handleClose();
+      showNotification('Organization added successfully', 'success');
+    } catch (err: any) {
+      const errors: string[] = err?.data?.errors || [];
+      errors.forEach((msg) => {
+        if (msg.includes('Name')) {
+          setError('name', { message: msg });
+        } else if (msg.includes('code')) {
+          setError('organization_code', { message: msg });
+        }
+      });
+    }
   };
 
-  useEffect(() => {
-    dispatch(fetchOrganizations());
-  }, [dispatch]);
+  const columns = [
+    { field: 'name', headerName: 'Name', flex: 1 },
+    { field: 'organization_code', headerName: 'Code', width: 150 },
+    { field: 'font', headerName: 'Font', width: 150 },
+    { field: 'primaryLightColor', headerName: 'Primary Light', width: 150 },
+    { field: 'primaryDarkColor', headerName: 'Primary Dark', width: 150 },
+    { field: 'secondaryColor', headerName: 'Secondary', width: 150 },
+  ];
+
+  const rows = organizations.map((org) => ({
+    id: org.id,
+    name: org.name,
+    organization_code: org.organization_code,
+    font: org.settings?.font || '—',
+    primaryLightColor: org.settings?.primaryLightColor || '—',
+    primaryDarkColor: org.settings?.primaryDarkColor || '—',
+    secondaryColor: org.settings?.secondaryColor || '—',
+  }));
 
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">Manage Organizations</Typography>
+        <Typography variant="h5" color="primary">
+          Manage Organizations
+        </Typography>
         <Button
           variant="contained"
           color="primary"
           onClick={handleOpen}
           startIcon={<AddIcon />}
         >
-          Add Organization
+          Onboard New Organization
         </Button>
       </Box>
 
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Code</TableCell>
-            <TableCell>Font</TableCell>
-            <TableCell>Primary Light</TableCell>
-            <TableCell>Primary Dark</TableCell>
-            <TableCell>Secondary</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {organizations.map((org) => (
-            <TableRow key={org.id}>
-              <TableCell>{org.name}</TableCell>
-              <TableCell>{org.code}</TableCell>
-              <TableCell>{org.settings?.font}</TableCell>
-              <TableCell>{org.settings?.primaryLightColor}</TableCell>
-              <TableCell>{org.settings?.primaryDarkColor}</TableCell>
-              <TableCell>{org.settings?.secondaryColor}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Table rows={rows} columns={columns} pagination sorting />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>
@@ -124,148 +142,199 @@ function Organizations() {
           </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Box display="flex" flexDirection="column" gap={3} mt={1}>
-            <Typography variant="h6">Organization Info</Typography>
-            <TextField
-              label="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              fullWidth
-            />
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Box display="flex" flexDirection="column" gap={3} mt={1}>
+              <Typography variant="h6">Organization Info</Typography>
 
-            <Divider />
-            <Typography variant="h6">Branding Settings</Typography>
+              <Controller
+                name="name"
+                control={control}
+                defaultValue=""
+                rules={{ required: 'Name is required' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Name"
+                    fullWidth
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
+              />
 
-            <TextField
-              select
-              label="Font"
-              value={font}
-              onChange={(e) => setFont(e.target.value)}
-              fullWidth
-            >
-              {fontOptions.map((font) => (
-                <MenuItem key={font} value={font} style={{ fontFamily: font }}>
-                  {font}
-                </MenuItem>
-              ))}
-            </TextField>
+              <Controller
+                name="organization_code"
+                control={control}
+                defaultValue=""
+                rules={{ required: 'Code is required' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Code"
+                    fullWidth
+                    error={!!errors.organization_code}
+                    helperText={errors.organization_code?.message}
+                  />
+                )}
+              />
 
-            <Box>
-              <Typography variant="subtitle1">Light Mode Colors</Typography>
-              <Box display="flex" gap={2} mt={1}>
-                <TextField
-                  select
-                  label="Primary Light"
-                  value={primaryLightColor}
-                  onChange={(e) => setPrimaryLightColor(e.target.value)}
-                  fullWidth
-                >
-                  {colorOptions.map((color) => (
-                    <MenuItem key={color.name} value={color.code}>
-                      <Box
-                        sx={{
-                          display: 'inline-block',
-                          width: 12,
-                          height: 12,
-                          backgroundColor: color.code,
-                          borderRadius: '50%',
-                          marginRight: 1,
-                        }}
-                      />
-                      {color.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+              <Divider />
+              <Typography variant="h6">Branding Settings</Typography>
 
-                <TextField
-                  select
-                  label="Secondary Light"
-                  value={secondaryLightColor}
-                  onChange={(e) => setSecondaryLightColor(e.target.value)}
-                  fullWidth
-                >
-                  {colorOptions.map((color) => (
-                    <MenuItem key={color.name} value={color.code}>
-                      <Box
-                        sx={{
-                          display: 'inline-block',
-                          width: 12,
-                          height: 12,
-                          backgroundColor: color.code,
-                          borderRadius: '50%',
-                          marginRight: 1,
-                        }}
-                      />
-                      {color.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+              <Controller
+                name="font"
+                control={control}
+                defaultValue={fontOptions[0]}
+                render={({ field }) => (
+                  <TextField select label="Font" fullWidth {...field}>
+                    {fontOptions.map((font) => (
+                      <MenuItem
+                        key={font}
+                        value={font}
+                        style={{ fontFamily: font }}
+                      >
+                        {font}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+
+              <Box>
+                <Typography variant="subtitle1">Light Mode Colors</Typography>
+                <Box display="flex" gap={2} mt={1}>
+                  <Controller
+                    name="primaryLightColor"
+                    control={control}
+                    defaultValue={colorOptions[0].code}
+                    render={({ field }) => (
+                      <TextField
+                        select
+                        label="Primary Light"
+                        fullWidth
+                        {...field}
+                      >
+                        {colorOptions.map((color) => (
+                          <MenuItem key={color.name} value={color.code}>
+                            <Box
+                              sx={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                backgroundColor: color.code,
+                                borderRadius: '50%',
+                                marginRight: 1,
+                              }}
+                            />
+                            {color.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+
+                  <Controller
+                    name="secondaryLightColor"
+                    control={control}
+                    defaultValue={colorOptions[1].code}
+                    render={({ field }) => (
+                      <TextField
+                        select
+                        label="Secondary Light"
+                        fullWidth
+                        {...field}
+                      >
+                        {colorOptions.map((color) => (
+                          <MenuItem key={color.name} value={color.code}>
+                            <Box
+                              sx={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                backgroundColor: color.code,
+                                borderRadius: '50%',
+                                marginRight: 1,
+                              }}
+                            />
+                            {color.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </Box>
               </Box>
-            </Box>
 
-            <Box>
-              <Typography variant="subtitle1">Dark Mode Colors</Typography>
-              <Box display="flex" gap={2} mt={1}>
-                <TextField
-                  select
-                  label="Primary Dark"
-                  value={primaryDarkColor}
-                  onChange={(e) => setPrimaryDarkColor(e.target.value)}
-                  fullWidth
-                >
-                  {colorOptions.map((color) => (
-                    <MenuItem key={color.name} value={color.code}>
-                      <Box
-                        sx={{
-                          display: 'inline-block',
-                          width: 12,
-                          height: 12,
-                          backgroundColor: color.code,
-                          borderRadius: '50%',
-                          marginRight: 1,
-                        }}
-                      />
-                      {color.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+              <Box>
+                <Typography variant="subtitle1">Dark Mode Colors</Typography>
+                <Box display="flex" gap={2} mt={1}>
+                  <Controller
+                    name="primaryDarkColor"
+                    control={control}
+                    defaultValue={colorOptions[0].code}
+                    render={({ field }) => (
+                      <TextField
+                        select
+                        label="Primary Dark"
+                        fullWidth
+                        {...field}
+                      >
+                        {colorOptions.map((color) => (
+                          <MenuItem key={color.name} value={color.code}>
+                            <Box
+                              sx={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                backgroundColor: color.code,
+                                borderRadius: '50%',
+                                marginRight: 1,
+                              }}
+                            />
+                            {color.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
 
-                <TextField
-                  select
-                  label="Secondary Dark"
-                  value={secondaryDarkColor}
-                  onChange={(e) => setSecondaryDarkColor(e.target.value)}
-                  fullWidth
-                >
-                  {colorOptions.map((color) => (
-                    <MenuItem key={color.name} value={color.code}>
-                      <Box
-                        sx={{
-                          display: 'inline-block',
-                          width: 12,
-                          height: 12,
-                          backgroundColor: color.code,
-                          borderRadius: '50%',
-                          marginRight: 1,
-                        }}
-                      />
-                      {color.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  <Controller
+                    name="secondaryDarkColor"
+                    control={control}
+                    defaultValue={colorOptions[2].code}
+                    render={({ field }) => (
+                      <TextField
+                        select
+                        label="Secondary Dark"
+                        fullWidth
+                        {...field}
+                      >
+                        {colorOptions.map((color) => (
+                          <MenuItem key={color.name} value={color.code}>
+                            <Box
+                              sx={{
+                                display: 'inline-block',
+                                width: 12,
+                                height: 12,
+                                backgroundColor: color.code,
+                                borderRadius: '50%',
+                                marginRight: 1,
+                              }}
+                            />
+                            {color.name}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    )}
+                  />
+                </Box>
               </Box>
-            </Box>
 
-            <Button variant="contained" color="primary" onClick={handleSubmit}>
-              Save Organization
-            </Button>
-          </Box>
+              <Button type="submit" variant="contained" color="primary">
+                Save Organization
+              </Button>
+            </Box>
+          </form>
         </DialogContent>
       </Dialog>
     </Box>

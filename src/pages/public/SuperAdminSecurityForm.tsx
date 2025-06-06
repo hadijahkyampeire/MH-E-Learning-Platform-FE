@@ -3,7 +3,10 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { loginAdmin } from '../../api/login';
+import { useLoginAdminMutation } from '../../services/authApi';
+import { useNotification } from '../../context/NotificationProvider';
+import { useAppDispatch } from '../../store/hooks';
+import { setCredentials } from '../../store/slices/authSlice';
 
 const schema = yup.object().shape({
   security_answer: yup.string().required('Security answer is required'),
@@ -18,6 +21,9 @@ type SecurityInputs = {
 const SuperAdminSecurityForm = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
+  const [loginAdmin] = useLoginAdminMutation();
+  const { showNotification } = useNotification();
+  const dispatch = useAppDispatch();
 
   const {
     register,
@@ -28,14 +34,16 @@ const SuperAdminSecurityForm = () => {
   });
 
   const onSubmit = async (data: SecurityInputs) => {
-    const response = await loginAdmin(data);
+    const response = await loginAdmin(data).unwrap();
     if (response?.token) {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      dispatch(setCredentials({ token: response.token, user: response.user }));
       navigate('/dashboard');
+      showNotification('Login successful', 'success');
     } else {
-      // Handle error case, e.g., show a notification
       console.error('Login failed:', response?.message || 'Unknown error');
+      showNotification(response?.message || 'Login failed', 'error');
     }
   };
 
@@ -50,7 +58,7 @@ const SuperAdminSecurityForm = () => {
         mt={2}
         width="300px"
       >
-        <TextField 
+        <TextField
           label="Email"
           fullWidth
           value={state?.email || ''}

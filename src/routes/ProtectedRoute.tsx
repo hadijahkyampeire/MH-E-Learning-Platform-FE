@@ -10,15 +10,8 @@ const ProtectedRoute = ({
   roles?: number[];
 }) => {
   const { token, user } = useAppSelector((state) => state.auth);
-  console.log('ProtectedRoute check', {
-    token,
-    user,
-    role: user?.role,
-    roles,
-    isAllowed: roles?.includes(user?.role),
-  });
 
-  if (!token || !user) return <Navigate to="/login" />;
+  if (!token || !user) return <Navigate to="/" />;
 
   if (roles && !roles.includes(user.role))
     return <Navigate to="/unauthorized" />;

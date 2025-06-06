@@ -19,11 +19,11 @@ export interface Branding {
 }
 
 const defaultBranding: Branding = {
-  mode: 'light',
+ mode: 'light',
   primaryLightColor: '#64B5F6',
-  secondaryLightColor: '#FFA726',
+  secondaryLightColor: '#800000',
   primaryDarkColor: '#7986CB',
-  secondaryDarkColor: '#FF8A65',
+  secondaryDarkColor: '#DC143C',
   font: 'Roboto, sans-serif',
 };
 
@@ -42,7 +42,13 @@ const ThemeContext = createContext<ThemeContextProps>({
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useThemeContext = () => useContext(ThemeContext);
+export const useThemeContext = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useThemeContext must be used within ThemeProviderWrapper');
+  }
+  return context;
+};
 
 export const ThemeProviderWrapper = ({
   children,
@@ -52,18 +58,27 @@ export const ThemeProviderWrapper = ({
   const [branding, setBranding] = useState<Branding>(defaultBranding);
 
   const toggleTheme = () => {
-    setBranding((prev) => ({
-      ...prev,
-      mode: prev.mode === 'dark' ? 'light' : 'dark',
-    }));
+    console.log('called');
+    setBranding((prev) => {
+      const newMode = prev.mode === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('themeMode', newMode);
+      return {
+        ...prev,
+        mode: newMode,
+      };
+    });
   };
 
   useEffect(() => {
-    const fetchBranding = async () => {
-      // Replace with real fetch if needed
-      setBranding(defaultBranding);
-    };
-    fetchBranding();
+    const savedMode = localStorage.getItem('themeMode') as
+      | 'light'
+      | 'dark'
+      | null;
+
+    setBranding((prev) => ({
+      ...prev,
+      mode: savedMode || prev.mode,
+    }));
   }, []);
 
   const theme = useMemo(() => getTheme(branding), [branding]);

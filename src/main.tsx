@@ -4,7 +4,7 @@ import './index.css';
 import App from './App.tsx';
 import { Provider } from 'react-redux';
 import { store } from './store/store.ts';
-import { ThemeProviderWrapper } from './theme/ThemeProviderWrapper.tsx';
+import { ThemeProviderWrapper } from './context/themeContext.tsx';
 
 
 createRoot(document.getElementById('root')!).render(

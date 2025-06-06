@@ -1,18 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
-import organizationReducer from './slices/organizationSlice';
-import usersReducer from './slices/usersSlice';
-import adminUsersReducer from './slices/adminUserSlice';
-import adminOrgsReducer from './slices/adminOrgsSlice';
+
+import { apiSlice } from '../services/apiSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    organizations: organizationReducer,
-    users: usersReducer,
-    adminUsers: adminUsersReducer,
-    adminOrganizations: adminOrgsReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(apiSlice.middleware),
+  devTools: process.env.NODE_ENV !== 'production',
+
 });
 
 export type RootState = ReturnType<typeof store.getState>;

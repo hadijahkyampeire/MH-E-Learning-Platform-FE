@@ -35,7 +35,6 @@ export type MenuItem = {
 type Props = {
   items: MenuItem[];
   width?: number;
-
 };
 
 const DashboardSidebar = ({ items, width = 240 }: Props) => {
@@ -81,7 +80,7 @@ const DashboardSidebar = ({ items, width = 240 }: Props) => {
                 {item.icon || <DashboardIcon />}
               </ListItemIcon>
               <ListItemText primary={item.label} />
-              {hasChildren ? (isOpen ? <ExpandLess /> : <ExpandMore />) : null}
+              {hasChildren ? isOpen ? <ExpandLess /> : <ExpandMore /> : null}
             </ListItemButton>
             {hasChildren && (
               <Collapse in={isOpen} timeout="auto" unmountOnExit>
@@ -116,17 +115,24 @@ const DashboardSidebar = ({ items, width = 240 }: Props) => {
     >
       <Box>{renderMenu(items)}</Box>
 
-      {/* Appearance Toggle Section */}
       <Box p={2}>
         <Divider sx={{ mb: 1 }} />
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1}>
-            {darkMode ? <DarkModeIcon fontSize="small" /> : <LightModeIcon fontSize="small" />}
-            <Typography variant="body2">
-              Appearance
-            </Typography>
+            {darkMode ? (
+              <DarkModeIcon fontSize="small" />
+            ) : (
+              <LightModeIcon fontSize="small" />
+            )}
+            <Typography variant="body2">Appearance</Typography>
           </Box>
-          <Switch size="small" checked={darkMode} onChange={toggleTheme} />
+
+          <Switch
+            size="small"
+            checked={darkMode}
+            onChange={toggleTheme}
+            color="secondary"
+          />
         </Box>
       </Box>
     </Drawer>

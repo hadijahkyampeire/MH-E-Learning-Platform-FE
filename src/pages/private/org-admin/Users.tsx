@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -19,33 +18,31 @@ import CloseIcon from '@mui/icons-material/Close';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useEffect, useState } from 'react';
 import AddUserForm from './AddUser';
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { fetchUsers } from '../../../store/slices/usersSlice';
-import { activateOrgUser, deactivateOrgUser } from '../../../api/users';
+import { useAppSelector } from '../../../store/hooks';
+import {
+  useGetOrgUsersQuery,
+  useActivateOrgUserMutation,
+  useDeactiveOrgUserMutation,
+} from '../../../services/usersApi';
+import Table from '../../../components/ui/Table';
+
 import type { User } from '../../../types/user';
 
 function Users() {
-  const dispatch = useAppDispatch();
-
   const [open, setOpen] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const users = useAppSelector((state) => state.users.users);
-  const currentUser = useAppSelector((state) => state.auth.user);
-  const filteredUsers = users.filter(user => user.id !== currentUser?.id);
+  const { data: users = [], refetch: fetchUsers } = useGetOrgUsersQuery();
+  const [activateOrgUser] = useActivateOrgUserMutation();
+  const [deactivateOrgUser] = useDeactiveOrgUserMutation();
 
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const filteredUsers = users.filter((user) => user.id !== currentUser?.id);
 
   useEffect(() => {
-    const fetchApiUsers = async () => {
-      try {
-        await dispatch(fetchUsers());
-      } catch (error) {
-        console.error('Failed to fetch users:', error);
-      }
-    };
-    fetchApiUsers();
-  }, [dispatch]);
+    fetchUsers();
+  }, []);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -60,10 +57,45 @@ function Users() {
     setMenuAnchor(null);
   };
 
+  const columns = [
+    { field: 'email', headerName: 'Email', flex: 1 },
+    {
+      field: 'role',
+      headerName: 'Role',
+      flex: 1,
+      renderCell: ({ row }: any) =>
+        row.role === 1 ? 'Admin' : row.role === 2 ? 'Instructor' : 'Student',
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      flex: 1,
+      renderCell: ({ row }: any) => (row.active ? 'Active' : 'Inactive'),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      sortable: false,
+      renderCell: ({ row }: any) => (
+        <IconButton onClick={(e) => handleMenuOpen(e, row)}>
+          <MoreVertIcon />
+        </IconButton>
+      ),
+    },
+  ];
+
+  const rows = filteredUsers.map((user) => ({
+    id: `${user.email}-${user.role}`,
+    email: user.email,
+    role: user.role,
+    active: user.active,
+  }));
+
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">All Users</Typography>
+        <Typography variant="h5" color='primary'>Manage Users</Typography>
+ 
         <Button
           variant="contained"
           color="primary"
@@ -74,36 +106,7 @@ function Users() {
         </Button>
       </Box>
 
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Email</TableCell>
-            <TableCell>Role</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredUsers.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                {user.role === 1
-                  ? 'Admin'
-                  : user.role === 2
-                  ? 'Instructor'
-                  : 'Student'}
-              </TableCell>
-              <TableCell>{user.active ? 'Active' : 'Inactive'}</TableCell>
-              <TableCell>
-                <IconButton onClick={(e) => handleMenuOpen(e, user)}>
-                  <MoreVertIcon />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Table rows={rows} columns={columns} pagination sorting />
 
       <Menu
         anchorEl={menuAnchor}
@@ -118,12 +121,10 @@ function Users() {
           onClick={async () => {
             if (!selectedUser) return;
             try {
-              if (selectedUser.active) {
-                await deactivateOrgUser(selectedUser?.id);
-              } else {
-                await activateOrgUser(selectedUser?.id);
-              }
-              dispatch(fetchUsers());
+              selectedUser.active
+                ? await deactivateOrgUser(selectedUser.id)
+                : await activateOrgUser(selectedUser.id);
+              fetchUsers();
             } catch (err) {
               console.error('Toggle user error:', err);
             } finally {

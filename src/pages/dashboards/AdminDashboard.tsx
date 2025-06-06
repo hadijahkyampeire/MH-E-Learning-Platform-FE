@@ -24,16 +24,25 @@ const AdminDashboard = () => {
     console.log('Redirect to change password');
   };
 
+  const headerHeight = 64;
+  const sidebarWidth = 240;
   return (
-    <Box>
+    <>
       <DashboardHeader
         onChangePassword={handleChangePassword}
       />
       <DashboardSidebar items={sidebarItems} />
-      <Box sx={{ marginLeft: '240px', px: 3 }}>
+      <Box sx={{
+          ml: `${sidebarWidth}px`,
+          mt: `${headerHeight}px`,
+          p: 3,
+          height: `calc(100vh - ${headerHeight}px)`,
+          overflowY: 'auto',
+          position: 'relative',
+        }}>
         <Outlet />
       </Box>
-    </Box>
+    </>
   );
 };
 export default AdminDashboard;

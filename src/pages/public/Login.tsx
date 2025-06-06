@@ -2,11 +2,12 @@ import { Box, Button, TextField, Autocomplete } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { login } from '../../store/slices/authSlice';
-import { fetchOrganizations } from '../../store/slices/organizationSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { setCredentials } from '../../store/slices/authSlice';
+import { useLoginMutation } from '../../services/authApi';
+import { useGetOrganizationsQuery } from '../../services/organizationsApi';
 import * as yup from 'yup';
-import { useEffect } from 'react';
+import { useNotification } from '../../context/NotificationProvider';
 
 type LoginFormInputs = {
   email: string;
@@ -32,14 +33,14 @@ const loginSchema = yup.object().shape({
     .required('Password is required'),
 });
 
-const SA_OPTION = { id: -1, organization_code: 'SA001' };
+const SA_OPTION = { id: 0, organization_code: 'SA001' };
 
 const LoginForm = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { organizations, loading } = useAppSelector(
-    (state) => state.organizations
-  );
+  const [login, { isLoading }] = useLoginMutation();
+  const { showNotification } = useNotification();
+  const { data: organizations = [], isLoading: loadingOrgs } = useGetOrganizationsQuery();
 
   const organizationOptions = [SA_OPTION, ...organizations];
 
@@ -56,36 +57,36 @@ const LoginForm = () => {
     const finalPayload: LoginPayload = {
       email: data.email,
       password: data.password,
-      organization_id: data.organization_id ?? undefined,
+      organization_id: data.organization_id === 0 ? undefined : data.organization_id,
     };
 
-    if (data.organization_id === SA_OPTION.id) {
-      delete finalPayload.organization_id;
-    }
-
-    const result = await dispatch(login(finalPayload));
-
-    if (login.fulfilled.match(result)) {
-      const { user, token, message } = result.payload;
+    try {
+      const result = await login(finalPayload).unwrap();
+      const { user, token, message } = result;
 
       if (!token && message === 'MFA') {
         navigate('/security', {
           state: { email: data.email, password: data.password },
         });
+        showNotification('Please complete next step', 'info');
       } else {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        dispatch(setCredentials({ user, token }));
+
         if (user.role === 1) navigate('/admin');
         else if (user.role === 2) navigate('/instructor');
         else if (user.role === 3) navigate('/student');
+        showNotification('Login successful', 'success');
       }
+    } catch (error) {
+      const err = error as { data?: { message?: string } };
+      showNotification(
+        err?.data?.message || 'Login failed. Please try again.',
+        'error'
+      );
     }
   };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      await dispatch(fetchOrganizations());
-    };
-    fetchData();
-  }, [dispatch]);
 
   return (
     <Box
@@ -115,7 +116,7 @@ const LoginForm = () => {
           rules={{ required: 'Organization is required' }}
           render={({ field }) => (
             <Autocomplete
-              loading={loading}
+              loading={loadingOrgs}
               options={organizationOptions}
               getOptionLabel={(option) => option.organization_code}
               isOptionEqualToValue={(option, value) => option.id === value.id}
@@ -147,8 +148,13 @@ const LoginForm = () => {
           helperText={errors.password?.message ?? ' '}
         />
       </Box>
-      <Button variant="contained" type="submit" sx={{ mt: '2px' }}>
-        Login
+      <Button
+        variant="contained"
+        type="submit"
+        sx={{ mt: '2px' }}
+        disabled={isLoading}
+      >
+        {isLoading ? 'Logging in...' : 'Login'}
       </Button>
     </Box>
   );

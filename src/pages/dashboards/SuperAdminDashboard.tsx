@@ -5,10 +5,12 @@ import { Box } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 import DomainIcon from '@mui/icons-material/Domain';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 
 const sidebarItems = [
+  { label: 'Overview', path: '/dashboard/overview', icon: <DashboardIcon /> },  
+  { label: 'Organizations', path: '/dashboard/organizations', icon: <DomainIcon /> },
   { label: 'All Users', path: '/dashboard/users', icon: <PeopleIcon /> },
-  { label: 'Organizations', path: '/dashboard/orgs', icon: <DomainIcon /> },
   {
     label: 'Courses/Programs',
     path: '/dashboard/courses',
