@@ -3,7 +3,7 @@ import { apiSlice } from "./apiSlice";
 export const organizationsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getOrganizations: builder.query<any[], void>({
-      query: () => 'organizations',
+      query: () => '/organizations',
       providesTags: ['Organizations']
     })
   })

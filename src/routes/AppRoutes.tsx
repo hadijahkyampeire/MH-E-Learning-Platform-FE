@@ -22,24 +22,30 @@ import ManageOrganizations from '../pages/private/super-admin/Organizations';
 // Admin pages
 import OrgUsers from '../pages/private/org-admin/Users';
 
-
 import Resources from '../pages/private/student/Resources';
 import Assignments from '../pages/private/student/Assignments';
 import Quizzes from '../pages/private/student/Quiz';
 import Grades from '../pages/private/student/Grades';
-import SCourses from '../pages/private/student/Courses';
+
+import CourseOverview from '../pages/private/student/CourserOverview';
+import StudentOverview from '../pages/private/student/StudentOverview';
+import StudentProfile from '../pages/private/student/StudentProfile';
 
 import ICourses from '../pages/private/instructor/ICourses';
 import Students from '../pages/private/instructor/Students';
 import IQuizzes from '../pages/private/instructor/IQuizzes';
 import IResources from '../pages/private/instructor/IResources';
 import IAssignments from '../pages/private/instructor/IAssignments';
+import IOverview from '../pages/private/instructor/IOverview';
 
 import InstructorDashboard from '../pages/dashboards/InstructorDashboard';
 import UnAuthorized from '../pages/UnAuthorized';
 import ProtectedRoute from './ProtectedRoute';
 import AnonymousRoute from './AnonymousRoute';
 import Overview from '../pages/private/super-admin/Overview';
+import OOverview from '../pages/private/org-admin/Overview';
+import AdminCourseDetails from '../pages/private/org-admin/CourseDetails';
+import ICourseDetails from '../pages/private/instructor/ICourseDetails';
 
 const AppRoutes = () => (
   <Routes>
@@ -73,12 +79,17 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     >
-      <Route index element={<Navigate to="courses" replace />} />
-      <Route path="courses" element={<SCourses />} />
-      <Route path="courses/:courseId/resources" element={<Resources />} />
-      <Route path="courses/:courseId/assignments" element={<Assignments />} />
-      <Route path="courses/:courseId/quizzes" element={<Quizzes />} />
-      <Route path="courses/:courseId/grades" element={<Grades />} />
+      {/* Global pages */}
+      <Route index element={<Navigate to="overview" replace />} />
+      <Route path="overview" element={<StudentOverview />} />
+      <Route path="profile" element={<StudentProfile />} />
+
+      {/* Course detail routes — each course page is routed directly */}
+      <Route path="courses/:id/overview" element={<CourseOverview />} />
+      <Route path="courses/:id/resources" element={<Resources />} />
+      <Route path="courses/:id/assignments" element={<Assignments />} />
+      <Route path="courses/:id/quizzes" element={<Quizzes />} />
+      <Route path="courses/:id/grades" element={<Grades />} />
     </Route>
     <Route
       path="/dashboard"
@@ -102,9 +113,11 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     >
-      <Route index element={<Navigate to="users" replace />} />
+      <Route index element={<Navigate to="overview" replace />} />
+      <Route path="overview" element={<OOverview />} />
       <Route path="users" element={<OrgUsers />} />
       <Route path="courses" element={<Courses />} />
+      <Route path="courses/:id" element={<AdminCourseDetails />} />
     </Route>
     <Route
       path="/instructor"
@@ -114,11 +127,16 @@ const AppRoutes = () => (
         </ProtectedRoute>
       }
     >
+      <Route index element={<Navigate to="overview" replace />} />
+      <Route path="overview" element={<IOverview />} />
       <Route path="courses" element={<ICourses />} />
-      <Route path="enroll" element={<Students />} />
-      <Route path="assignments" element={<IAssignments />} />
-      <Route path="resources" element={<IResources />} />
-      <Route path="quizzes" element={<IQuizzes />} />
+      <Route path="courses/:id" element={<ICourseDetails />}>
+        <Route index element={<Navigate to="enrollments" replace />} />
+        <Route path="enrollments" element={<Students />} />
+        <Route path="assignments" element={<IAssignments />} />
+        <Route path="resources" element={<IResources />} />
+        <Route path="quizzes" element={<IQuizzes />} />
+      </Route>
     </Route>
     <Route path="/unauthorized" element={<UnAuthorized />} />
   </Routes>

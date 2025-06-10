@@ -10,7 +10,7 @@ import {
   MenuItem,
   Divider,
 } from '@mui/material';
-import Table from '../../../components/ui/Table';
+import Table from '../../../components/ui/Table/Table';
 import CloseIcon from '@mui/icons-material/Close';
 import AddIcon from '@mui/icons-material/Add';
 import {
@@ -95,12 +95,12 @@ function Organizations() {
   };
 
   const columns = [
-    { field: 'name', headerName: 'Name', flex: 1 },
-    { field: 'organization_code', headerName: 'Code', width: 150 },
-    { field: 'font', headerName: 'Font', width: 150 },
-    { field: 'primaryLightColor', headerName: 'Primary Light', width: 150 },
-    { field: 'primaryDarkColor', headerName: 'Primary Dark', width: 150 },
-    { field: 'secondaryColor', headerName: 'Secondary', width: 150 },
+    { id: 'name', label: 'Name', flex: 1, sortable: true },
+    { id: 'organization_code', label: 'Code', width: 150, sortable: true },
+    { id: 'font', label: 'Font', width: 150 },
+    { id: 'primaryLightColor', label: 'Primary Light', width: 150 },
+    { id: 'primaryDarkColor', label: 'Primary Dark', width: 150 },
+    { id: 'secondaryColor', label: 'Secondary', width: 150 },
   ];
 
   const rows = organizations.map((org) => ({
@@ -129,7 +129,13 @@ function Organizations() {
         </Button>
       </Box>
 
-      <Table rows={rows} columns={columns} pagination sorting />
+      <Table
+        rows={rows}
+        columns={columns}
+        enablePagination
+        enableHover
+        enableHighlight
+      />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>
