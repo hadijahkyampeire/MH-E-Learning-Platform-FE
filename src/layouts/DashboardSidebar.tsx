@@ -1,6 +1,7 @@
 import {
   Drawer,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -24,12 +25,14 @@ import { useThemeContext } from '../context/themeContext';
 
 export type MenuItem = {
   label: string;
-  icon?: React.ReactNode;
-  path?: string;
+  icon?: React.ReactNode | null;
+  path?: string | null;
   children?: MenuItem[];
   onClick?: () => void;
   isActive?: boolean;
   isDisabled?: boolean;
+  type?: 'item' | 'header' | 'custom';
+  customRender?: React.ReactNode;
 };
 
 type Props = {
@@ -51,6 +54,26 @@ const DashboardSidebar = ({ items, width = 240 }: Props) => {
   const renderMenu = (menuItems: MenuItem[], level = 0) => (
     <List component="div" disablePadding sx={{ pl: level * 2 }}>
       {menuItems.map((item) => {
+         if (item.type === 'custom' && item.customRender) {
+        return <Box key={item.label}>{item.customRender}</Box>;
+      }
+
+      if (item.type === 'header') {
+        return (
+          <ListItem key={item.label} disablePadding sx={{ pl: 2 }}>
+            <ListItemText
+              primary={
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 'bold', color: 'text.secondary', mt: 2 }}
+                >
+                  {item.label}
+                </Typography>
+              }
+            />
+          </ListItem>
+        );
+      }
         const hasChildren = item.children && item.children.length > 0;
         const isOpen = openMap[item.label];
 

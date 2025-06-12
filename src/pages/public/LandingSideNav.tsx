@@ -6,10 +6,8 @@ import {
   Divider,
   Switch,
   Typography,
-  Button,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useNotification } from '../../context/NotificationProvider';
 
 type Props = {
   selected: string;
@@ -25,9 +23,6 @@ const LandingSidebar = ({
   onToggleTheme,
 }: Props) => {
   const theme = useTheme();
-  const { showNotification } = useNotification();
-
-  const handleShowNot = () => showNotification('Test', 'success');
 
   return (
     <Box
@@ -75,7 +70,6 @@ const LandingSidebar = ({
         <Typography variant="body2">Dark Mode</Typography>
         <Switch checked={darkMode} onChange={onToggleTheme} />
       </Box>
-      <Button onClick={handleShowNot}>Test Toast</Button>
     </Box>
   );
 };
