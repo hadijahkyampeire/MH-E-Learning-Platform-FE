@@ -80,9 +80,9 @@ function EnrollStudentsDrawer({
   const filtered = useMemo(() => {
     return studentData.filter(
       (u) =>
-        u.firstName.toLowerCase().includes(search.toLowerCase()) ||
-        u.lastName.toLowerCase().includes(search.toLowerCase()) ||
-        u.employeeId.toLowerCase().includes(search.toLowerCase())
+        u.email.toLowerCase().includes(search.toLowerCase()) ||
+        // u.lastName.toLowerCase().includes(search.toLowerCase()) ||
+        u.id.toLowerCase().includes(search.toLowerCase())
     );
   }, [studentData, search]);
 
@@ -91,11 +91,10 @@ function EnrollStudentsDrawer({
   }, [filtered, page, rowsPerPage]);
 
   const columns = [
-    { id: 'employeeId', label: 'Employee ID' },
+    { id: 'id', label: 'Student ID' },
     {
-      id: 'name',
-      label: 'Name',
-      render: (r: any) => `${r.firstName} ${r.lastName}`,
+      id: 'email',
+      label: 'Email',
     },
   ];
 
@@ -119,7 +118,7 @@ function EnrollStudentsDrawer({
 
         <TextField
           fullWidth
-          label="Search by name or ID"
+          label="Search by Email or ID"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           size='small'

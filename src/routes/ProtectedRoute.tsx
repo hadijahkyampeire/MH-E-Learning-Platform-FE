@@ -7,14 +7,15 @@ const ProtectedRoute = ({
   roles,
 }: {
   children: JSX.Element;
-  roles?: number[];
+  roles?: string[];
 }) => {
   const { token, user } = useAppSelector((state) => state.auth);
 
   if (!token || !user) return <Navigate to="/" />;
 
-  if (roles && !roles.includes(user.role))
+  if (roles && !roles.includes(user.role)) {
     return <Navigate to="/unauthorized" />;
+  }
 
   return children;
 };

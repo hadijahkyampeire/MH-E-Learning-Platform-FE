@@ -1,23 +1,30 @@
 import { useParams } from 'react-router-dom';
 import { Box, Button, Typography } from '@mui/material';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import EnrolledStudentsTable from './EnrolledStudentsTable';
 import EnrollStudentsDrawer from './EnrollStudentsDrawer';
 import ConfirmEnrollDialog from './ConfirmationDialog';
-import { useGetOrgUsersQuery } from '../../../services/usersApi';
 import {
   useAddEnrollmentMutation,
   useBulkCreateEnrollmentsMutation,
-  useGetEnrollmentsQuery,
 } from '../../../services/enrollmentApi';
 import { useNotification } from '../../../context/NotificationProvider';
-import { useGetCourseQuery } from '../../../services/coursesApi';
+import {
+  useGetCourseQuery,
+  useGetEnrolledStudentsQuery,
+  useGetUnenrolledStudentsQuery,
+} from '../../../services/coursesApi';
 
 function Students() {
   const { id: courseId } = useParams<{ id: string }>();
-  const { data: course } = useGetCourseQuery(courseId!);
-  const { data: users = [] } = useGetOrgUsersQuery();
-  const { data: enrollments = [] } = useGetEnrollmentsQuery(courseId!);
+  type Course = { name?: string; [key: string]: any };
+  const { data: course = {} as Course, refetch } = useGetCourseQuery(courseId!);
+  const { data: enrolledStudents = [] } = useGetEnrolledStudentsQuery(
+    courseId!
+  );
+  const { data: unenrolledStudents = [] } = useGetUnenrolledStudentsQuery(
+    courseId!
+  );
   const [addEnrollment] = useAddEnrollmentMutation();
   const [bulkCreateEnrollments] = useBulkCreateEnrollmentsMutation();
   const { showNotification } = useNotification();
@@ -25,21 +32,6 @@ function Students() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-
-  const enrolledUsers = useMemo(() => {
-    return enrollments.map((e) => {
-      const u = users.find((u) => u.email === e.email)!;
-      return {
-        ...u,
-        status: e.status,
-      };
-    });
-  }, [enrollments, users]);
-
-  const notEnrolledUsers = useMemo(() => {
-    const enrolledIds = new Set(enrolledUsers.map((u) => u.id));
-    return users.filter((u) => !enrolledIds.has(u.id));
-  }, [users, enrolledUsers]);
 
   const handleConfirmEnroll = async () => {
     const payload = selectedIds.map((id) => ({
@@ -62,6 +54,7 @@ function Students() {
       setConfirmOpen(false);
       setDrawerOpen(false);
       setSelectedIds([]);
+      refetch();
     } catch {
       showNotification('Enrollment failed', 'error');
     }
@@ -80,11 +73,11 @@ function Students() {
         Enroll Students
       </Button>
 
-      <EnrolledStudentsTable rows={enrolledUsers} />
+      <EnrolledStudentsTable rows={enrolledStudents} courseName={course?.name} />
       <EnrollStudentsDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        users={notEnrolledUsers}
+        users={unenrolledStudents}
         selectedIds={selectedIds}
         onSelectChange={setSelectedIds}
         onConfirm={() => setConfirmOpen(true)}

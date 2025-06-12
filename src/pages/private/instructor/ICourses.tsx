@@ -13,28 +13,34 @@ import {
   useDeleteCourseMutation,
   useUpdateCourseMutation,
 } from '../../../services/coursesApi';
-import { useAppSelector } from '../../../store/hooks';
-import CoursesTable from '../CourseTable';
+import CoursesTable from '../../../components/courses/Table';
 import { useNotification } from '../../../context/NotificationProvider';
-import { transformCourses } from '../../../utils/index';
+import { type CourseRow } from '../../../types/courses';
+import { semesterNumberToText } from '../../../utils';
 
 const TeacherCoursesPage = () => {
   const [open, setOpen] = useState(false);
-  const { email: teacherId } = useAppSelector((s) => s.auth.user);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedCourse, setSelectedCourse] =
+    useState<Partial<CourseRow> | null>(null);
+  const [duplicateMode, setDuplicateMode] = useState(false);
+
   const { data: rawCourses = [], refetch } = useGetCoursesQuery();
   const [deleteCourse] = useDeleteCourseMutation();
-  const [updateCourse] = useUpdateCourseMutation();
   const { showNotification } = useNotification();
+  const [updateCourse] = useUpdateCourseMutation();
 
-  const courses = transformCourses(rawCourses);
-  const myCourses = courses.filter((c) => c.instructorEmail === teacherId);
-
-  const enrichedCourses = (myCourses || []).map((course) => ({
-    ...course,
-    enrolledCount: course.enrolledCount ?? 0,
-    assignmentCount: course.assignmentCount ?? 0,
-    quizCount: course.quizCount ?? 0,
-  }));
+  const handleComplete = (course: CourseRow) => {
+    updateCourse({ id: course.id, data: { is_completed: true } })
+      .unwrap()
+      .then(() => {
+        refetch();
+        showNotification('Course marked complete', 'success');
+      })
+      .catch(() => {
+        showNotification('Failed to complete course', 'error');
+      });
+  };
 
   const handleDelete = (row: any) => {
     const id = typeof row === 'number' ? row : row.id;
@@ -50,42 +56,86 @@ const TeacherCoursesPage = () => {
       });
   };
 
-  const handleEdit = (row: any) => {
-    updateCourse({ id: row.id, data: row })
-      .unwrap()
-      .then(() => {
-        refetch();
-        showNotification('Course updated successfully', 'success');
-      })
-      .catch((err) => {
-        console.error('Failed to update course', err);
-        showNotification('Failed to update course', 'error');
-      });
+  const openEditForm = (row: CourseRow) => {
+    const prefilled = {
+      ...row,
+      semester: semesterNumberToText[row.semester as unknown as keyof typeof semesterNumberToText],
+    };
+    setSelectedCourse(prefilled);
+    setEditMode(true);
+    setOpen(true);
+  };
+
+  const openDuplicateForm = (row: CourseRow) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, is_completed, created_at, updated_at, ...rest } = row;
+    setSelectedCourse({
+      ...rest,
+      month: row.month < 12 ? row.month + 1 : 1,
+      year: row.month < 12 ? row.year : row.year + 1,
+    });
+    setEditMode(false);
+    setDuplicateMode(true);
+    setOpen(true);
+  };
+
+  const handleFormSuccess = () => {
+    refetch();
+    setOpen(false);
+    setSelectedCourse(null);
+    setEditMode(false);
+    setDuplicateMode(false);
   };
 
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" mb={2}>
         <Typography variant="h5">My Courses</Typography>
-        <Button variant="contained" onClick={() => setOpen(true)}>
+        <Button
+          variant="contained"
+          onClick={() => {
+            setOpen(true);
+            setSelectedCourse(null);
+            setEditMode(false);
+            setDuplicateMode(false);
+          }}
+        >
           Add Course
         </Button>
       </Box>
       <CoursesTable
-        rows={enrichedCourses}
-        onEdit={(row) => handleEdit(row)}
-        onDelete={(row) => handleDelete(row)}
+        rows={rawCourses}
+        onEdit={openEditForm}
+        onDelete={handleDelete}
+        onComplete={handleComplete}
+        onDuplicate={openDuplicateForm}
       />
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
-        <DialogTitle>Add Course</DialogTitle>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          setSelectedCourse(null);
+          setEditMode(false);
+          setDuplicateMode(false);
+        }}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle color="primary">
+          {selectedCourse
+            ? `Edit ${selectedCourse.name}`
+            : duplicateMode
+            ? 'Duplicate Course'
+            : 'Add Course'}
+        </DialogTitle>
         <DialogContent>
           <CourseForm
-            onSuccess={() => {
-              refetch();
-              setOpen(false);
-            }}
+            course={selectedCourse || {}}
+            onSuccess={handleFormSuccess}
             isOrgAdmin={false}
+            isDuplicate={duplicateMode}
+            isEditMode={editMode}
           />
         </DialogContent>
       </Dialog>

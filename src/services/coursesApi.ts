@@ -1,5 +1,29 @@
 import { apiSlice } from './apiSlice';
 
+export interface CourseRequest {
+  name: string;
+  course_code: string;
+  semester: string;
+  month: number;
+  year: number;
+  organization_id?: number;
+  user_id?: number;
+  is_completed?: boolean;
+}
+
+export interface EnrollmentResponse {
+  id: number;
+  status: string;
+  grade: string;
+  email: string;
+  total_score: number;
+  firstName?: string;
+  lastName?: string;
+  user_id?: number;
+  course_id?: number;
+  employeeId?: string;
+}
+
 export interface Course {
   id: number;
   name: string;
@@ -8,11 +32,16 @@ export interface Course {
   month: number;
   year: number;
   is_completed: boolean;
-  organization_id?: number;
-  user_id?: number;
-  enrolledCount?: number;
-  assignmentCount?: number;
-  quizCount?: number;
+  instructorEmail: string;
+  organizationName: string;
+  enrollment_count: number;
+  assignment_type_counts: {
+    homework?: number;
+    quiz?: number;
+    exam?: number;
+    project?: number;
+  };
+  [key: string]: any;
 }
 
 export interface CourseResponse {
@@ -29,7 +58,7 @@ export const coursesApi = apiSlice.injectEndpoints({
     getCourse: builder.query<Course, string>({
       query: (id) => `/courses/${id}`,
     }),
-    addCourse: builder.mutation<Course, Partial<Course>>({
+    addCourse: builder.mutation<CourseRequest, Partial<Course>>({
       query: (course) => ({
         url: '/courses',
         method: 'POST',
@@ -37,7 +66,7 @@ export const coursesApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Courses'],
     }),
-    updateCourse: builder.mutation<Course, { id: number | string; data: Partial<Course> }>({
+    updateCourse: builder.mutation<CourseRequest, { id: number | string; data: Partial<Course> }>({
       query: ({ id, data }) => ({
         url: `/courses/${id}`,
         method: 'PATCH',
@@ -52,6 +81,14 @@ export const coursesApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Courses'],
     }),
+     getEnrolledStudents: builder.query<EnrollmentResponse[], number | string>({
+          query: (courseId) => `/courses/${courseId}/students/enrolled`,
+          providesTags: ['Courses'],
+        }),
+        getUnenrolledStudents: builder.query<EnrollmentResponse[], number | string>({
+          query: (courseId) => `/courses/${courseId}/students/unenrolled`,
+          providesTags: ['Courses'],
+        }),
   }),
 });
 
@@ -62,4 +99,6 @@ export const {
   useAddCourseMutation,
   useUpdateCourseMutation,
   useDeleteCourseMutation,
+  useGetEnrolledStudentsQuery,
+  useGetUnenrolledStudentsQuery,
 } = coursesApi;

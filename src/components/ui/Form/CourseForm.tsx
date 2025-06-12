@@ -1,13 +1,16 @@
-import { Box, Button, MenuItem, Typography } from '@mui/material';
+import { useEffect } from 'react';
+import { Box, Button, MenuItem, Alert, TextField } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import InputField from '../Input';
 import { useAppSelector } from '../../../store/hooks';
 import { useGetOrganizationsQuery } from '../../../services/organizationsApi';
-import { useAddCourseMutation } from '../../../services/coursesApi';
+import {
+  useAddCourseMutation,
+  useUpdateCourseMutation,
+} from '../../../services/coursesApi';
 import { useNotification } from '../../../context/NotificationProvider';
-import Dropdown from '../Dropdown';
 
 const CourseSchema = yup.object().shape({
   name: yup.string().required('Course name is required'),
@@ -21,9 +24,14 @@ const CourseSchema = yup.object().shape({
 
 export type CourseFormInputs = yup.InferType<typeof CourseSchema>;
 
+type CourseWithId = CourseFormInputs & { id?: number };
+
 interface Props {
   onSuccess: () => void;
   isOrgAdmin: boolean;
+  course?: Partial<CourseWithId>;
+  isDuplicate?: boolean;
+  isEditMode: boolean;
 }
 
 const mapErrorToField = (msg: string): keyof CourseFormInputs | undefined => {
@@ -39,7 +47,13 @@ const mapErrorToField = (msg: string): keyof CourseFormInputs | undefined => {
   return undefined;
 };
 
-const CourseForm = ({ onSuccess, isOrgAdmin }: Props) => {
+const CourseForm = ({
+  onSuccess,
+  isOrgAdmin,
+  course,
+  isDuplicate = false,
+  isEditMode = false,
+}: Props) => {
   const user = useAppSelector((state) => state.auth.user);
 
   const {
@@ -47,8 +61,11 @@ const CourseForm = ({ onSuccess, isOrgAdmin }: Props) => {
     handleSubmit,
     setError,
     formState: { errors },
+    reset,
+    getValues,
   } = useForm<CourseFormInputs>({
     resolver: yupResolver(CourseSchema),
+    shouldUnregister: true,
     defaultValues: {
       name: '',
       course_code: '',
@@ -60,20 +77,45 @@ const CourseForm = ({ onSuccess, isOrgAdmin }: Props) => {
     },
   });
 
-  const { data: orgUsers = [] } = useGetOrganizationsQuery();
+  console.log('CourseForm initialized with values:', getValues());
+  useEffect(() => {
+    if (course) {
+      reset({
+        name: course.name || '',
+        course_code: course.course_code || '',
+        semester: course.semester || 'first',
+        month: course.month || new Date().getMonth() + 1,
+        year: course.year || new Date().getFullYear(),
+        user_id: course.user_id || user?.id,
+        organization_id: course.organization_id || user?.organization_id,
+      });
+    }
+  }, [course, reset, user]);
+
+  const { data: orgUsers = [], refetch } = useGetOrganizationsQuery();
   const [addCourse, { isLoading }] = useAddCourseMutation();
+  const [updateCourse] = useUpdateCourseMutation();
   const { showNotification } = useNotification();
 
   const onSubmit = async (values: CourseFormInputs) => {
-    console.log('Form Values:', values);
     const payload = {
       ...values,
       user_id: isOrgAdmin ? values.user_id || user?.id : user?.id,
+      organization_id: values.organization_id || user?.organization_id,
     };
 
+    console.log('Submitting course:', payload);
     try {
-      await addCourse(payload).unwrap();
-      showNotification('Course created successfully', 'success');
+      if (isEditMode && course?.id) {
+        await updateCourse({ id: course.id, data: payload }).unwrap();
+        showNotification('Course updated successfully', 'success');
+      } else {
+        await addCourse(payload).unwrap();
+        showNotification('Course created successfully', 'success');
+      }
+
+      refetch();
+      reset();
       onSuccess();
     } catch (err) {
       let errors: string[] = ['An unknown error occurred'];
@@ -85,14 +127,11 @@ const CourseForm = ({ onSuccess, isOrgAdmin }: Props) => {
         err.data &&
         typeof err.data === 'object'
       ) {
-
-        errors =
-          (Array.isArray((err.data as any)?.errors) && (err.data as any).errors) ||
-          [((err.data as any)?.error)];
+        errors = (Array.isArray((err.data as any)?.errors) &&
+          (err.data as any).errors) || [(err.data as any)?.error];
       }
 
       let matched = false;
-
       errors.forEach((msg) => {
         const field = mapErrorToField(msg);
         if (field) {
@@ -102,15 +141,19 @@ const CourseForm = ({ onSuccess, isOrgAdmin }: Props) => {
       });
 
       if (!matched) {
-        showNotification('Failed to create course', 'error');
+        showNotification('Failed to submit course form', 'error');
       }
     }
   };
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} mt={2}>
-      <Typography variant="h6">Create Course</Typography>
-
+      {isDuplicate && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Duplicating a course — please choose a different month to avoid
+          conflicts.
+        </Alert>
+      )}
       <Box display="flex" flexDirection="column" gap={2} mt={2}>
         <Controller
           name="name"
@@ -142,18 +185,18 @@ const CourseForm = ({ onSuccess, isOrgAdmin }: Props) => {
           name="semester"
           control={control}
           render={({ field }) => (
-            <Dropdown
+            <TextField
               {...field}
+              select
               label="Semester"
-              options={[
-                { value: 'first', label: 'First Semester' },
-                { value: 'second', label: 'Second Semester' },
-                { value: 'summer', label: 'Summer Semester' },
-              ]}
+              fullWidth
               error={!!errors.semester}
               helperText={errors.semester?.message}
-              fullWidth
-            />
+            >
+              <MenuItem value="first">First Semester</MenuItem>
+              <MenuItem value="second">Second Semester</MenuItem>
+              <MenuItem value="summer">Summer Semester</MenuItem>
+            </TextField>
           )}
         />
         <Controller

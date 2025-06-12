@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import { type SxProps } from '@mui/material';
 
 import TablePaginationControls from './TablePaginationControls';
 
@@ -44,6 +45,7 @@ export type TableProps<T> = {
   onRowSelectToggle?: (id: string | number) => void;
 
   isRowDisabled?: (row: T) => boolean;
+  getRowSx?: (row: T) => SxProps;
 
   page?: number;
   rowsPerPage?: number;
@@ -71,6 +73,7 @@ function Table<T>({
   onRowSelectToggle,
 
   isRowDisabled = () => false,
+  getRowSx = () => ({}),
 
   page = 0,
   rowsPerPage = 10,
@@ -94,78 +97,101 @@ function Table<T>({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.length > 0 ? rows.map((row) => {
-              const rowId = getRowId(row);
-              const isExpanded = expandedRowId === rowId;
-              const isSelected = selectedRowIds.includes(rowId);
-              const disabled = isRowDisabled(row);
+            {rows.length > 0 ? (
+              rows.map((row) => {
+                const rowId = getRowId(row);
+                const isExpanded = expandedRowId === rowId;
+                const isSelected = selectedRowIds.includes(rowId);
+                const disabled = isRowDisabled(row);
 
-              return (
-                <React.Fragment key={rowId}>
-                  <TableRow
-                    hover={enableHover}
-                    selected={enableHighlight && isSelected}
-                    onClick={() => {
-                      if (!disabled && enableCheckbox && onRowSelectToggle)
-                        onRowSelectToggle(rowId);
-                    }}
-                    sx={disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}
-                  >
-                    {enableExpansion && (
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onExpandToggle?.(rowId);
-                          }}
-                        >
-                          {isExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-                        </IconButton>
-                      </TableCell>
-                    )}
-
-                    {enableCheckbox && (
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          disabled={disabled}
-                          checked={isSelected}
-                          onChange={() => onRowSelectToggle?.(rowId)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </TableCell>
-                    )}
-
-                    {columns.map((col) => (
-                      <TableCell key={col.id} align={col.align || 'left'}>
-                        {col.render ? col.render(row) : (row as any)[col.id]}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-
-                  {enableExpansion && isExpanded && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length + (enableCheckbox ? 1 : 0) + 1}
-                        sx={{ p: 0 }}
-                      >
-                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                          <Box sx={{ m: 2 }}>
-                            {renderExpandedContent?.(row) ?? (
-                              <Typography variant="body2" color="text.secondary">
-                                No additional content
-                              </Typography>
+                return (
+                  <React.Fragment key={rowId}>
+                    <TableRow
+                      hover={enableHover}
+                      selected={enableHighlight && isSelected}
+                      onClick={() => {
+                        if (!disabled && enableCheckbox && onRowSelectToggle)
+                          onRowSelectToggle(rowId);
+                      }}
+                      sx={{
+                        ...(disabled
+                          ? { opacity: 0.5, pointerEvents: 'none' }
+                          : {}),
+                        ...(getRowSx?.(row) || {}),
+                      }}
+                    >
+                      {enableExpansion && (
+                        <TableCell>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onExpandToggle?.(rowId);
+                            }}
+                          >
+                            {isExpanded ? (
+                              <KeyboardArrowUp />
+                            ) : (
+                              <KeyboardArrowDown />
                             )}
-                          </Box>
-                        </Collapse>
-                      </TableCell>
+                          </IconButton>
+                        </TableCell>
+                      )}
+
+                      {enableCheckbox && (
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            disabled={disabled}
+                            checked={isSelected}
+                            onChange={() => onRowSelectToggle?.(rowId)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </TableCell>
+                      )}
+
+                      {columns.map((col) => (
+                        <TableCell key={col.id} align={col.align || 'left'}>
+                          {col.render ? col.render(row) : (row as any)[col.id]}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  )}
-                </React.Fragment>
-              );
-            }): (
+
+                    {enableExpansion && isExpanded && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={
+                            columns.length + (enableCheckbox ? 1 : 0) + 1
+                          }
+                          sx={{ p: 0 }}
+                        >
+                          <Collapse
+                            in={isExpanded}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            <Box sx={{ m: 2 }}>
+                              {renderExpandedContent?.(row) ?? (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  No additional content
+                                </Typography>
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                );
+              })
+            ) : (
               <TableRow>
-                <TableCell colSpan={columns.length + (enableCheckbox ? 1 : 0) + 1} align="center">
+                <TableCell
+                  colSpan={columns.length + (enableCheckbox ? 1 : 0) + 1}
+                  align="center"
+                >
                   <Typography variant="body2" color="text.secondary">
                     No data available
                   </Typography>

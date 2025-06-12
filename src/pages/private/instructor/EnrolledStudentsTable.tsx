@@ -56,22 +56,36 @@ const enrollments: EnrollmentResponse[] = [
   },
 ];
 
-function EnrolledStudentsTable({ rows }: { rows: any[] }) {
+function EnrolledStudentsTable({
+  rows,
+  courseName,
+}: {
+  rows: any[];
+  courseName: string | undefined;
+}) {
   const dataToShow = rows && rows.length > 0 ? rows : enrollments;
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  console.log(rows, 'rr', dataToShow);
 
-  const safeRows = dataToShow.map((r) => ({
-    firstName: r.firstName || '—',
-    lastName: r.lastName || '',
-    email: r.email || '—',
-    employeeId: r.employeeId || '—',
-    grade: r.grade || '',
-    total_score: r.total_score ?? 0,
-    status: r.status || 'unknown',
-  }));
+  const safeRows = useMemo(() => {
+    return dataToShow.map((r) => {
+      const enrollment = r.enrollments?.find(
+        (e: any) => e.course === courseName
+      );
+
+      return {
+        id: r.id || '—',
+        firstName: r.firstName || '—',
+        lastName: r.lastName || '',
+        email: r.email || '—',
+        employeeId: r.employeeId || '—',
+        grade: enrollment?.grade || '',
+        total_score: enrollment?.total_score ?? 0,
+        status: enrollment?.status || 'unknown',
+      };
+    });
+  }, [dataToShow, courseName]);
 
   const filteredRows = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -91,12 +105,11 @@ function EnrolledStudentsTable({ rows }: { rows: any[] }) {
     });
   }, [searchTerm, gradeFilter, statusFilter, safeRows]);
 
-  console.log(filteredRows, 'filteredRows');
   const columns = [
     {
-      id: 'employeeId',
+      id: 'id',
       label: 'Student ID',
-      render: (r: any) => r.employeeId || '—',
+      render: (r: any) => r.id || '—',
     },
     {
       id: 'name',
@@ -144,7 +157,7 @@ function EnrolledStudentsTable({ rows }: { rows: any[] }) {
       id: 'status',
       label: 'Status',
       render: (r: any) => {
-        const status = r.status.toLowerCase();
+        const status = r.status?.toLowerCase();
 
         const colorMap: Record<string, string> = {
           active: '#64B5F6',
@@ -161,7 +174,7 @@ function EnrolledStudentsTable({ rows }: { rows: any[] }) {
               color: colorMap[status] || '#9E9E9E',
             }}
           >
-            {r.status || 'Not Started'}
+            {status || 'Not Started'}
           </span>
         );
       },
