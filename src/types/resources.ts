@@ -3,7 +3,8 @@ export interface ResourceItem {
   title: string;
   createdAt: string;
   visible: boolean;
-  base64: string;
+  url: string;
+  name: string;
   type: string;
 }
 

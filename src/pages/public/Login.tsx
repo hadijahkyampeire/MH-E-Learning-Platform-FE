@@ -1,4 +1,11 @@
-import { Box, Button, TextField, Autocomplete } from '@mui/material';
+import {
+  Box,
+  Button,
+  TextField,
+  Autocomplete,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +47,10 @@ const LoginForm = () => {
   const dispatch = useAppDispatch();
   const [login, { isLoading }] = useLoginMutation();
   const { showNotification } = useNotification();
-  const { data: organizations = [], isLoading: loadingOrgs } = useGetOrganizationsQuery();
+  const { data: organizations = [], isLoading: loadingOrgs } =
+    useGetOrganizationsQuery();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const organizationOptions = [SA_OPTION, ...organizations];
 
@@ -57,7 +67,8 @@ const LoginForm = () => {
     const finalPayload: LoginPayload = {
       email: data.email,
       password: data.password,
-      organization_id: data.organization_id === 0 ? undefined : data.organization_id,
+      organization_id:
+        data.organization_id === 0 ? undefined : data.organization_id,
     };
 
     try {
@@ -74,9 +85,9 @@ const LoginForm = () => {
         localStorage.setItem('user', JSON.stringify(user));
         dispatch(setCredentials({ user, token }));
 
-        if (user.role === 1) navigate('/admin');
-        else if (user.role === 2) navigate('/instructor');
-        else if (user.role === 3) navigate('/student');
+        if (user.role === 'org_admin') navigate('/admin');
+        else if (user.role === 'teacher') navigate('/instructor');
+        else if (user.role === 'student') navigate('/student');
         showNotification('Login successful', 'success');
       }
     } catch (error) {
@@ -93,23 +104,37 @@ const LoginForm = () => {
       component="form"
       onSubmit={handleSubmit(onSubmit)}
       display="flex"
-      alignItems="flex-start"
+      flexDirection={isMobile ? 'column' : 'row'}
+      alignItems="center"
       justifyContent="flex-end"
-      gap={2}
-      pt={2}
+      gap={isMobile ? 2 : 2}
       width="100%"
+      sx={{
+        maxWidth: '100%',
+        overflow: 'hidden',
+      }}
     >
-      <Box width={250}>
+      <Box
+        sx={{
+          width: isMobile ? '100%' : '200px',
+          minWidth: isMobile ? 'auto' : '200px',
+        }}
+      >
         <TextField
           label="Email"
           fullWidth
           size="small"
           {...register('email')}
           error={!!errors.email}
-          helperText={errors.email?.message ?? ' '}
+          helperText={String(errors.email?.message || '')}
         />
       </Box>
-      <Box width={250}>
+      <Box
+        sx={{
+          width: isMobile ? '100%' : '200px',
+          minWidth: isMobile ? 'auto' : '200px',
+        }}
+      >
         <Controller
           name="organization_id"
           control={control}
@@ -128,7 +153,7 @@ const LoginForm = () => {
                   {...params}
                   label="Organization"
                   error={!!errors.organization_id}
-                  helperText={errors.organization_id?.message ?? ' '}
+                  helperText={String(errors.organization_id?.message || '')}
                   size="small"
                   fullWidth
                 />
@@ -137,7 +162,12 @@ const LoginForm = () => {
           )}
         />
       </Box>
-      <Box width={250}>
+      <Box
+        sx={{
+          width: isMobile ? '100%' : '200px',
+          minWidth: isMobile ? 'auto' : '200px',
+        }}
+      >
         <TextField
           label="Password"
           type="password"
@@ -145,13 +175,17 @@ const LoginForm = () => {
           size="small"
           {...register('password')}
           error={!!errors.password}
-          helperText={errors.password?.message ?? ' '}
+          helperText={String(errors.password?.message || '')}
         />
       </Box>
       <Button
         variant="contained"
         type="submit"
-        sx={{ mt: '2px' }}
+        sx={{
+          width: isMobile ? '100%' : 'auto',
+          minWidth: isMobile ? 'auto' : '100px',
+          height: '40px',
+        }}
         disabled={isLoading}
       >
         {isLoading ? 'Logging in...' : 'Login'}

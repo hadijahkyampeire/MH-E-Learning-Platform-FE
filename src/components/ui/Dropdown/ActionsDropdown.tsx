@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface ResourceItem {
   id: number;
@@ -46,8 +48,14 @@ const ActionsDropdown: React.FC<Props> = ({ row, onEdit, onDelete }) => {
         </IconButton>
       </Tooltip>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
-        <MenuItem onClick={handleEdit}>Edit</MenuItem>
-        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+        <MenuItem onClick={handleEdit}>
+          <EditIcon sx={{ color: 'primary.main', mr: 1 }} />
+          <Typography color="primary">Edit</Typography>
+        </MenuItem>
+        <MenuItem onClick={handleDelete}>
+          <DeleteIcon sx={{ color: 'error.main', mr: 1 }} />
+          <Typography color="error">Delete</Typography>
+        </MenuItem>
       </Menu>
     </>
   );

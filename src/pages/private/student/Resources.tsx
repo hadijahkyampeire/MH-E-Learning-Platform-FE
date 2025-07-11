@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -6,68 +6,92 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  CircularProgress,
+  Stack,
 } from '@mui/material';
-import { Download, OpenInNew } from '@mui/icons-material';
+import { useParams } from 'react-router-dom';
+import { Download } from '@mui/icons-material';
 import Table from '../../../components/ui/Table/Table';
 import { type Column } from '../../../components/ui/Table/Table';
-import { type ResourceItem, RESOURCE_KEY } from '../../../types/resources';
+import { type ResourceItem } from '../../../types/resources';
+import { useGetResourcesQuery } from '../../../services/resources';
 
 const StudentResources: React.FC = () => {
-  const [visibleResources, setVisibleResources] = useState<ResourceItem[]>([]);
+  const { id: courseId } = useParams();
   const [previewResource, setPreviewResource] = useState<ResourceItem | null>(
     null
   );
 
-  useEffect(() => {
-    const saved = localStorage.getItem(RESOURCE_KEY);
-    if (saved) {
-      const all: ResourceItem[] = JSON.parse(saved);
-      setVisibleResources(all.filter((r) => r.visible));
-    }
-  }, []);
+  const { data: resources, isLoading } = useGetResourcesQuery(courseId!, {
+    skip: !courseId,
+  });
 
-  const download = (res: ResourceItem) => {
-    const a = document.createElement('a');
-    a.href = res.base64;
-    a.download = res.title;
-    a.click();
-  };
+  console.log(resources, 'res');
+  const visibleResources: ResourceItem[] = (resources || [])
+    .filter((r) => r.visible)
+    .map((r) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      visible: r.visible,
+      createdAt: r.created_at,
+      url: r.file.url,
+      name: r.file.filename,
+      type: r.file.content_type,
+    }));
 
   const columns: Column<ResourceItem>[] = [
     { id: 'title', label: 'Title' },
+    { id: 'description', label: 'Description' },
+    {
+      id: 'name',
+      label: 'File',
+      render: (row) => (
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Typography
+            variant="body2"
+            color="primary"
+            sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={() => setPreviewResource(row)}
+          >
+            {row.name}
+          </Typography>
+          <IconButton
+            size="small"
+            title="Download"
+            onClick={() => {
+              window.open(row.url, '_blank');
+            }}
+          >
+            <Download fontSize="small" />
+          </IconButton>
+        </Stack>
+      ),
+    },
     {
       id: 'createdAt',
       label: 'Uploaded On',
       render: (row) => new Date(row.createdAt).toLocaleString(),
     },
-    {
-      id: 'actions',
-      label: 'Actions',
-      align: 'center',
-      render: (row) => (
-        <>
-          <IconButton title="Preview" onClick={() => setPreviewResource(row)}>
-            <OpenInNew />
-          </IconButton>
-          <IconButton title="Download" onClick={() => download(row)}>
-            <Download />
-          </IconButton>
-        </>
-      ),
-    },
   ];
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Typography variant="h5" gutterBottom color='primary'>
+      <Typography variant="h5" gutterBottom color="primary">
         Available Resources
       </Typography>
 
-      <Table<ResourceItem>
-        rows={visibleResources}
-        columns={columns}
-        getRowId={(row) => row.id}
-      />
+      {isLoading ? (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Table<ResourceItem>
+          rows={visibleResources}
+          columns={columns}
+          getRowId={(row) => row.id}
+        />
+      )}
 
       <Dialog
         open={!!previewResource}
@@ -80,13 +104,13 @@ const StudentResources: React.FC = () => {
           {previewResource &&
             (previewResource.type.startsWith('image') ? (
               <img
-                src={previewResource.base64}
-                alt={previewResource.title}
+                src={previewResource.url}
+                alt={previewResource.name}
                 style={{ width: '100%' }}
               />
             ) : previewResource.type === 'application/pdf' ? (
               <iframe
-                src={previewResource.base64}
+                src={previewResource.url}
                 title="PDF Preview"
                 width="100%"
                 height="600px"

@@ -12,14 +12,16 @@ import { Visibility, VisibilityOff, UploadFile } from '@mui/icons-material';
 import { type Column } from '../../../components/ui/Table/Table';
 import Table from '../../../components/ui/Table/Table';
 import ActionsDropdown from '../../../components/ui/Dropdown/ActionsDropdown';
+import ConfirmDialog from '../../../components/ui/Dialog';
 import { useParams } from 'react-router-dom';
 import { useNotification } from '../../../context/NotificationProvider';
 import {
   useGetResourcesQuery,
   useAddResourceMutation,
   useDeleteResourceMutation,
-  useUpdateResourceMutation
+  useUpdateResourceMutation,
 } from '../../../services/resources';
+import ResourceModal from './ResourceModal';
 
 interface ResourceItem {
   id: number;
@@ -45,8 +47,28 @@ const TeacherResources: React.FC = () => {
 
   const { data: apiResources = [] } = useGetResourcesQuery(cid);
   const [addResource] = useAddResourceMutation();
-  const [updateResource] = useUpdateResourceMutation();
   const [deleteResource] = useDeleteResourceMutation();
+  const [updateResource] = useUpdateResourceMutation();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const openConfirmDelete = (id: number) => {
+    setDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteId(null);
+    setConfirmOpen(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (deleteId !== null) {
+      deleteResource({ courseId: cid, id: deleteId });
+      setDeleteId(null);
+      setConfirmOpen(false);
+    }
+  };
 
   useEffect(() => {
     const mapped = apiResources.map((r) => ({
@@ -61,37 +83,51 @@ const TeacherResources: React.FC = () => {
     setResources(mapped);
   }, [apiResources]);
 
-  const handleSubmit = async () => {
-    if (!title || !file) {
-      showNotification('Title and file are required.', 'error');
-      return;
-    }
-
+  const handleSubmit = async (data: {
+    title: string;
+    description: string;
+    file: File | null;
+  }) => {
     try {
       const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      formData.append('file', file);
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      if (data.file) formData.append('file', data.file);
 
-      await addResource({ courseId: cid, data: formData as any }).unwrap();
+      if (editingResource) {
+        await updateResource({
+          courseId: cid,
+          id: editingResource.id,
+          data: formData as any,
+        }).unwrap();
+        showNotification('Resource updated successfully', 'success');
+      } else {
+        await addResource({ courseId: cid, data: formData as any }).unwrap();
+        showNotification('Resource uploaded successfully', 'success');
+      }
 
       setTitle('');
       setDescription('');
       setFile(null);
-      showNotification('Resource uploaded successfully', 'success');
+      setEditingResource(null);
+      setOpenModal(false);
     } catch {
-      setTitle('');
-      setDescription('');
-      setFile(null);
-      showNotification('Failed to upload resource', 'error');
+      showNotification('Resource upload failed, contact Admin', 'error');
     }
   };
 
-  const toggleVisibility = (id: number) => {
-    const updated = resources.map((r) =>
-      r.id === id ? { ...r, visible: !r.visible } : r
-    );
-    setResources(updated);
+  const toggleVisibility = async (id: number) => {
+    const resource = resources.find((r) => r.id === id);
+    if (!resource) return;
+    try {
+      await updateResource({
+        courseId: cid,
+        id: resource.id,
+        data: { visible: !resource.visible },
+      }).unwrap();
+    } catch {
+      showNotification('Failed to update visibility', 'error');
+    }
   };
 
   const openEditModal = (resource: ResourceItem) => {
@@ -100,12 +136,6 @@ const TeacherResources: React.FC = () => {
     setDescription(resource.description || '');
     setFile(null);
     setOpenModal(true);
-  };
-
-  const confirmDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this resource?')) {
-      deleteResource({ courseId: cid, id });
-    }
   };
 
   const columns: Column<ResourceItem>[] = [
@@ -151,7 +181,7 @@ const TeacherResources: React.FC = () => {
         <ActionsDropdown
           row={row}
           onEdit={openEditModal}
-          onDelete={confirmDelete}
+          onDelete={openConfirmDelete}
         />
       ),
     },
@@ -201,7 +231,7 @@ const TeacherResources: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<UploadFile />}
-            onClick={handleSubmit}
+            onClick={() => handleSubmit({ title, description, file })}
             disabled={!title || !file}
           >
             Upload
@@ -213,6 +243,33 @@ const TeacherResources: React.FC = () => {
         rows={resources}
         columns={columns}
         getRowId={(row) => row.id}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete Resource"
+        description="Are you sure you want to delete this resource? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
+      <ResourceModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setEditingResource(null);
+        }}
+        onSubmit={handleSubmit}
+        initialData={
+          editingResource
+            ? {
+                title: editingResource.title,
+                description: editingResource.description,
+              }
+            : undefined
+        }
+        isEdit={!!editingResource}
       />
     </Box>
   );

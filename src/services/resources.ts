@@ -15,6 +15,7 @@ export interface ResourceRequest {
   title: string;
   description?: string;
   file: File;
+  visible?: boolean;
 }
 
 const resourcesApi = apiSlice.injectEndpoints({

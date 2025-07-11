@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { Box } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
+import { useMobileNavigation, useResponsive } from '../../hooks/useResponsive';
 
 const sidebarItems = [
   {
@@ -19,30 +20,51 @@ const sidebarItems = [
 ];
 
 const AdminDashboard = () => {
+  const { mobileOpen, handleDrawerToggle } = useMobileNavigation();
+  const { isMobile } = useResponsive();
 
   const handleChangePassword = () => {
     console.log('Redirect to change password');
   };
 
   const headerHeight = 64;
-  const sidebarWidth = 240;
+  const sidebarWidth = isMobile ? 200 : 240;
+
   return (
-    <>
+    <Box>
       <DashboardHeader
         onChangePassword={handleChangePassword}
+        onMenuToggle={handleDrawerToggle}
       />
-      <DashboardSidebar items={sidebarItems} />
-      <Box sx={{
-          ml: `${sidebarWidth}px`,
+      <DashboardSidebar
+        items={sidebarItems}
+        width={sidebarWidth}
+        mobileOpen={mobileOpen}
+        onDrawerToggle={handleDrawerToggle}
+      />
+      <Box
+        sx={{
+          ml: { xs: 0, md: `${sidebarWidth}px` },
           mt: `${headerHeight}px`,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           height: `calc(100vh - ${headerHeight}px)`,
           overflowY: 'auto',
           position: 'relative',
-        }}>
-        <Outlet />
+          backgroundColor: 'background.default',
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: '1200px',
+            mx: 'auto',
+            width: '100%',
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
-    </>
+    </Box>
   );
 };
+
 export default AdminDashboard;
