@@ -17,12 +17,11 @@ const CourseDetailsPage = () => {
   const { data: course, isLoading } = useGetCourseQuery(id!);
 
   if (isLoading) return <div>Loading...</div>;
-  if (!course) return <div>Course not found</div>;
 
   const courseMenuItems = [
     {
       type: 'custom' as const,
-      label: `${course.name}`,
+      label: `${course?.name}`,
       customRender: (
         <Box p={2} pb={1} sx={{ borderBottom: '1px solid #e0e0e0' }}>
           <Typography
@@ -31,14 +30,15 @@ const CourseDetailsPage = () => {
             fontWeight="bold"
             align="center"
           >
-            {course.name} - {course.course_code}
+            {course?.name} - {course?.course_code}
           </Typography>
 
           <Typography color="text.secondary" align="center" fontSize={14}>
-            {capitalize(course.semester)} semester
+            {capitalize(course?.semester ?? '')} semester
           </Typography>
           <Typography color="text.secondary" align="center" fontSize={12}>
-            {months[course.month as keyof typeof months]}, {course.year}
+            {course?.month ? months[course.month as keyof typeof months] : ''}
+            {course?.year ? `, ${course.year}` : ''}
           </Typography>
         </Box>
       ),

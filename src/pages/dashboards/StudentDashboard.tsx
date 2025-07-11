@@ -1,27 +1,23 @@
 import { Box } from '@mui/material';
-import SchoolIcon from '@mui/icons-material/School';
-import BookIcon from '@mui/icons-material/MenuBook';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import QuizIcon from '@mui/icons-material/Quiz';
-import GradeIcon from '@mui/icons-material/Grade';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { Outlet } from 'react-router-dom';
-import DashboardHeader from '../../layouts/DashboardHeader';
 import DashboardSidebar from '../../layouts/DashboardSidebar';
+import DashboardHeader from '../../layouts/DashboardHeader';
 import { useGetCoursesQuery } from '../../services/coursesApi';
+import { useMobileNavigation, useResponsive } from '../../hooks/useResponsive';
+import {
+  Dashboard as DashboardIcon,
+  AccountCircle as AccountCircleIcon,
+  School as SchoolIcon,
+  Book as BookIcon,
+  Assignment as AssignmentIcon,
+  Quiz as QuizIcon,
+  Grade as GradeIcon,
+} from '@mui/icons-material';
 
 const StudentDashboard = () => {
   const { data: allCourses = [] } = useGetCoursesQuery();
-
-  if (allCourses.length === 0) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <h2>No active courses found</h2>
-        <p>Please enroll in a course to access the dashboard.</p>
-      </Box>
-    );
-  }
+  const { mobileOpen, handleDrawerToggle } = useMobileNavigation();
+  const { isMobile } = useResponsive();
 
   const sidebarItems = [
     {
@@ -73,22 +69,40 @@ const StudentDashboard = () => {
   };
 
   const headerHeight = 64;
-  const sidebarWidth = 240;
+  const sidebarWidth = isMobile ? 200 : 240;
+
   return (
     <Box>
-      <DashboardHeader onChangePassword={handleChangePassword} />
-      <DashboardSidebar items={sidebarItems} />
+      <DashboardHeader
+        onChangePassword={handleChangePassword}
+        onMenuToggle={handleDrawerToggle}
+      />
+      <DashboardSidebar
+        items={sidebarItems}
+        width={sidebarWidth}
+        mobileOpen={mobileOpen}
+        onDrawerToggle={handleDrawerToggle}
+      />
       <Box
         sx={{
-          ml: `${sidebarWidth}px`,
+          ml: { xs: 0, md: `${sidebarWidth}px` },
           mt: `${headerHeight}px`,
-          p: 3,
+          p: { xs: 2, sm: 3 },
           height: `calc(100vh - ${headerHeight}px)`,
           overflowY: 'auto',
           position: 'relative',
+          backgroundColor: 'background.default',
         }}
       >
-        <Outlet />
+        <Box
+          sx={{
+            maxWidth: '1200px',
+            mx: 'auto',
+            width: '100%',
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );
