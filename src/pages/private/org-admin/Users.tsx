@@ -5,10 +5,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   Typography,
   Menu,
   MenuItem,
@@ -42,7 +38,7 @@ function Users() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -55,6 +51,10 @@ function Users() {
   const handleMenuClose = () => {
     setSelectedUser(null);
     setMenuAnchor(null);
+  };
+
+  const handleEditUser = () => {
+    alert(`Edit ${selectedUser?.email}`);
   };
 
   const columns = [
@@ -94,8 +94,10 @@ function Users() {
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="h5" color='primary'>Manage Users</Typography>
- 
+        <Typography variant="h5" color="primary">
+          Manage Users
+        </Typography>
+
         <Button
           variant="contained"
           color="primary"
@@ -113,17 +115,17 @@ function Users() {
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={() => alert(`Edit ${selectedUser?.email}`)}>
-          Edit
-        </MenuItem>
+        <MenuItem onClick={handleEditUser}>Edit</MenuItem>
 
         <MenuItem
           onClick={async () => {
             if (!selectedUser) return;
             try {
-              selectedUser.active
-                ? await deactivateOrgUser(selectedUser.id)
-                : await activateOrgUser(selectedUser.id);
+              if (selectedUser.active) {
+                await deactivateOrgUser(selectedUser.id);
+              } else {
+                await activateOrgUser(selectedUser.id);
+              }
               fetchUsers();
             } catch (err) {
               console.error('Toggle user error:', err);

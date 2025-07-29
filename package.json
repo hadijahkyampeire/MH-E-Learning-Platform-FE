@@ -31,6 +31,7 @@
     "react-router-dom": "^6.30.1",
     "react-timer-hook": "^4.0.5",
     "sockjs-client": "^1.6.1",
+    "uuid": "^11.1.0",
     "yup": "^1.6.1"
   },
   "devDependencies": {

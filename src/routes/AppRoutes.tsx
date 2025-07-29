@@ -24,7 +24,7 @@ import OrgUsers from '../pages/private/org-admin/Users';
 
 import Resources from '../pages/private/student/Resources';
 import Assignments from '../pages/private/student/Assignments';
-import Quizzes from '../pages/private/student/Quiz';
+import Quizzes from '../pages/private/student/Quizzes';
 import Grades from '../pages/private/student/Grades';
 
 import CourseOverview from '../pages/private/student/CourserOverview';
@@ -46,6 +46,9 @@ import Overview from '../pages/private/super-admin/Overview';
 import OOverview from '../pages/private/org-admin/Overview';
 import AdminCourseDetails from '../pages/private/org-admin/CourseDetails';
 import ICourseDetails from '../pages/private/instructor/ICourseDetails';
+import StudentTakeQuiz from '../pages/private/student/QuizDetails';
+import QuizCreatePage from '../pages/private/instructor/QuizCreatePage';
+import QuizEditPage from '../pages/private/instructor/QuizEditPage';
 
 const AppRoutes = () => (
   <Routes>
@@ -90,6 +93,7 @@ const AppRoutes = () => (
       <Route path="courses/:id/assignments" element={<Assignments />} />
       <Route path="courses/:id/quizzes" element={<Quizzes />} />
       <Route path="courses/:id/grades" element={<Grades />} />
+      <Route path="courses/:id/quizzes/:quizId" element={<StudentTakeQuiz />} />
     </Route>
     <Route
       path="/dashboard"
@@ -136,6 +140,8 @@ const AppRoutes = () => (
         <Route path="assignments" element={<IAssignments />} />
         <Route path="resources" element={<IResources />} />
         <Route path="quizzes" element={<IQuizzes />} />
+        <Route path="quizzes/create" element={<QuizCreatePage />} />
+        <Route path="quizzes/:quizId/edit" element={<QuizEditPage />} />
       </Route>
     </Route>
     <Route path="/unauthorized" element={<UnAuthorized />} />

@@ -80,7 +80,6 @@ const Header = ({ onMenuToggle }: Props) => {
           sx={{
             display: { xs: 'none', md: 'flex' },
             justifyContent: 'flex-end',
-            overflow: 'hidden',
           }}
         >
           <LoginForm />

@@ -111,7 +111,8 @@ const LoginForm = () => {
       width="100%"
       sx={{
         maxWidth: '100%',
-        overflow: 'hidden',
+        pt: isMobile ? 14 : 0, // Add more padding top on mobile (14 * 8px = 112px)
+        scrollMarginTop: '80px', // Helps with scroll-into-view on focus
       }}
     >
       <Box
