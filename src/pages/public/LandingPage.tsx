@@ -68,7 +68,7 @@ export default function LandingPage() {
       <Box
         sx={{
           display: 'flex',
-          height: 'calc(100vh - 70px)',
+          minHeight: 'calc(100vh - 70px)',
           mt: '70px', // Account for fixed header
         }}
       >
@@ -98,13 +98,12 @@ export default function LandingPage() {
           flexDirection="column"
           sx={{
             backgroundColor: 'background.default',
-            overflowY: 'auto',
           }}
         >
           {isMobile && (
             <Box
               sx={{
-                mb: 3,
+                mb: 8, // Add more margin bottom for keyboard
                 p: 2,
                 backgroundColor: 'background.paper',
                 borderRadius: 1,

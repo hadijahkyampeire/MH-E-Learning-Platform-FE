@@ -78,7 +78,7 @@ const CourseDetailsPage = () => {
         >
           Courses
         </Link>
-        <Typography color="text.primary">{course.name}</Typography>
+        <Typography color="text.primary">{course?.name}</Typography>
       </Breadcrumbs>
 
       <Box flex={1} p={3}>

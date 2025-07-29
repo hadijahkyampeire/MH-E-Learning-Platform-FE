@@ -17,10 +17,8 @@ import {
   Paper,
   Checkbox,
 } from '@mui/material';
-import {
-  KeyboardArrowDown,
-  KeyboardArrowUp,
-} from '@mui/icons-material';
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import TablePaginationControls from './TablePaginationControls';
 
 export interface Column<T> {
   id: keyof T | string;
@@ -61,6 +59,7 @@ function ResponsiveTable<T>({
   getRowId = (row: any) => row.id,
   enableCheckbox = false,
   enableExpansion = false,
+  enablePagination = false,
   enableHover = true,
   enableHighlight = true,
   expandedRowId,
@@ -70,6 +69,11 @@ function ResponsiveTable<T>({
   onRowSelectToggle,
   isRowDisabled = () => false,
   getRowSx = () => ({}),
+  page = 0,
+  rowsPerPage = 10,
+  totalCount = 0,
+  onPageChange,
+  onRowsPerPageChange,
 }: ResponsiveTableProps<T>) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -337,6 +341,16 @@ function ResponsiveTable<T>({
         </Box>
       ) : (
         renderDesktopTable()
+      )}
+
+      {enablePagination && onPageChange && onRowsPerPageChange && (
+        <TablePaginationControls
+          page={page}
+          rowsPerPage={rowsPerPage}
+          count={totalCount}
+          onPageChange={onPageChange}
+          onRowsPerPageChange={onRowsPerPageChange}
+        />
       )}
     </Box>
   );
